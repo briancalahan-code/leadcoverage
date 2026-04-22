@@ -1,7 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import { CommandPalette } from "@/components/shared/command-palette";
+import { ToastProvider } from "@/components/shared/toast";
+import { SidebarNav } from "@/components/shared/sidebar-nav";
+import { MobileNav } from "@/components/shared/mobile-nav";
 
 export default async function AppLayout({
   children,
@@ -28,41 +30,38 @@ export default async function AppLayout({
     { href: "/admin", label: "Admin", icon: "◎" },
   ];
 
+  const orgName = (profile?.organizations as any)?.name || "No org";
+  const userName = profile?.full_name || "";
+
   return (
-    <div className="flex h-screen bg-gray-50">
-      <aside className="w-64 bg-gray-900 text-white flex flex-col">
-        <div className="p-4 border-b border-gray-800">
-          <h1 className="text-lg font-bold text-blue-400">LeadCoverage</h1>
-          <p className="text-xs text-gray-400 mt-1">
-            {(profile?.organizations as any)?.name || "No org"}
-          </p>
-        </div>
-        <nav className="flex-1 p-2">
-          {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white text-sm"
-            >
-              <span>{item.icon}</span>
-              {item.label}
-            </Link>
-          ))}
-        </nav>
-        <div className="p-4 border-t border-gray-800">
-          <p className="text-sm text-gray-400">{profile?.full_name}</p>
-          <form action="/api/auth/signout" method="POST">
-            <button
-              type="submit"
-              className="text-xs text-gray-500 hover:text-gray-300 mt-1"
-            >
-              Sign out
-            </button>
-          </form>
-        </div>
-      </aside>
-      <main className="flex-1 overflow-auto">{children}</main>
-      <CommandPalette />
-    </div>
+    <ToastProvider>
+      <div className="flex h-screen bg-gray-50">
+        {/* Desktop sidebar — hidden on small screens */}
+        <aside className="hidden md:flex w-64 bg-gray-900 text-white flex-col">
+          <div className="p-4 border-b border-gray-800">
+            <h1 className="text-lg font-bold text-blue-400">LeadCoverage</h1>
+            <p className="text-xs text-gray-400 mt-1">{orgName}</p>
+          </div>
+          <SidebarNav items={navItems} />
+          <div className="p-4 border-t border-gray-800">
+            <p className="text-sm text-gray-400">{userName}</p>
+            <form action="/api/auth/signout" method="POST">
+              <button
+                type="submit"
+                className="text-xs text-gray-500 hover:text-gray-300 mt-1"
+              >
+                Sign out
+              </button>
+            </form>
+          </div>
+        </aside>
+
+        {/* Mobile nav — visible only on small screens */}
+        <MobileNav items={navItems} orgName={orgName} userName={userName} />
+
+        <main className="flex-1 overflow-auto">{children}</main>
+        <CommandPalette />
+      </div>
+    </ToastProvider>
   );
 }
