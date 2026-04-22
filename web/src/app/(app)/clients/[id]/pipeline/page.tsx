@@ -1,6 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
-import Link from "next/link";
 
 const STAGES = [
   { key: "stage_1", label: "Stage 1", description: "Onboarding & Discovery" },
@@ -32,13 +31,7 @@ export default async function PipelinePage({
   return (
     <div className="p-8">
       <div className="mb-6">
-        <Link
-          href={`/clients/${id}`}
-          className="text-sm text-gray-500 hover:text-gray-700 mb-2 inline-block"
-        >
-          &larr; {client.name}
-        </Link>
-        <h1 className="text-2xl font-bold text-gray-900">Pipeline</h1>
+        <h2 className="text-lg font-semibold text-gray-900">Pipeline</h2>
       </div>
       <div className="space-y-3">
         {STAGES.map((stage, i) => (

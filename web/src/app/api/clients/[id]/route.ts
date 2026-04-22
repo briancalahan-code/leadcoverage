@@ -26,7 +26,7 @@ export async function PATCH(
   const body = await request.json();
   const { data, error } = await supabase
     .from("clients")
-    .update(body)
+    .update({ ...body, updated_at: new Date().toISOString() })
     .eq("id", id)
     .select()
     .single();

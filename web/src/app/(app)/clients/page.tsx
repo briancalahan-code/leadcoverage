@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
+import { DeleteClientButton } from "./delete-client-button";
 
 export default async function ClientsPage() {
   const supabase = await createClient();
@@ -33,6 +34,7 @@ export default async function ClientsPage() {
               <th className="p-4 font-medium">Pipeline Stage</th>
               <th className="p-4 font-medium">Health</th>
               <th className="p-4 font-medium">Last Updated</th>
+              <th className="p-4 font-medium">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y">
@@ -60,6 +62,12 @@ export default async function ClientsPage() {
                   {client.updated_at
                     ? new Date(client.updated_at).toLocaleDateString()
                     : "—"}
+                </td>
+                <td className="p-4">
+                  <DeleteClientButton
+                    clientId={client.id}
+                    clientName={client.name}
+                  />
                 </td>
               </tr>
             ))}
