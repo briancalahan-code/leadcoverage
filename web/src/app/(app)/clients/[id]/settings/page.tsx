@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { ApiKeyManager } from "@/components/settings/api-key-manager";
 
 export default async function ClientSettingsPage({
   params,
@@ -31,9 +32,10 @@ export default async function ClientSettingsPage({
       <div className="space-y-6 max-w-2xl">
         <div className="bg-white rounded-lg border p-6">
           <h2 className="font-semibold text-gray-900 mb-4">API Integrations</h2>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-gray-500 mb-4">
             Manage HubSpot, Clay, and other API keys for this client.
           </p>
+          <ApiKeyManager clientId={id} />
         </div>
         <div className="bg-white rounded-lg border p-6">
           <h2 className="font-semibold text-gray-900 mb-4">Team</h2>
