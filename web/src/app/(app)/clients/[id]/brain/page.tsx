@@ -1,45 +1,8 @@
-import Link from "next/link";
-
-const BRAIN_OBJECTS = [
-  {
-    key: "company_intelligence",
-    label: "Company Intelligence",
-    table: "company_intelligence",
-  },
-  {
-    key: "icp_definitions",
-    label: "ICP Definitions",
-    table: "icp_definitions",
-  },
-  { key: "personas", label: "Personas", table: "personas" },
-  {
-    key: "competitive_map",
-    label: "Competitive Map",
-    table: "competitive_map",
-  },
-  { key: "voice_model", label: "Voice Model", table: "voice_model" },
-  { key: "message_matrix", label: "Message Matrix", table: "message_matrix" },
-  { key: "content_index", label: "Content Index", table: "content_index" },
-  {
-    key: "campaign_history",
-    label: "Campaign History",
-    table: "campaign_history",
-  },
-  { key: "hubspot_health", label: "HubSpot Health", table: "hubspot_health" },
-  { key: "review_rules", label: "Review Rules", table: "review_rules" },
-  { key: "key_contacts", label: "Key Contacts", table: "key_contacts" },
-  {
-    key: "goals_backwards_math",
-    label: "Goals & Backwards Math",
-    table: "goals_backwards_math",
-  },
-  { key: "sow_scope", label: "SOW & Scope", table: "sow_scope" },
-  {
-    key: "lc_edge_benchmarks",
-    label: "LC Edge Benchmarks",
-    table: "lc_edge_benchmarks",
-  },
-];
+import { createClient } from "@/lib/supabase/server";
+import { notFound } from "next/navigation";
+import { BRAIN_OBJECTS } from "@/lib/brain-objects";
+import { BrainObjectCard } from "@/components/brain/brain-object-card";
+import { BrainTierSection } from "@/components/brain/brain-tier-section";
 
 export default async function BrainPage({
   params,
@@ -47,27 +10,97 @@ export default async function BrainPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const supabase = await createClient();
+
+  const { data: client } = await supabase
+    .from("clients")
+    .select("id")
+    .eq("id", id)
+    .single();
+  if (!client) notFound();
+
+  const brainData: Record<string, unknown> = {};
+  await Promise.all(
+    BRAIN_OBJECTS.map(async (obj) => {
+      if (obj.singleton) {
+        const { data } = await supabase
+          .from(obj.table)
+          .select("*")
+          .eq("client_id", id)
+          .maybeSingle();
+        brainData[obj.key] = data;
+      } else {
+        const { data } = await supabase
+          .from(obj.table)
+          .select("*")
+          .eq("client_id", id)
+          .order("last_updated", { ascending: false });
+        brainData[obj.key] = data || [];
+      }
+    }),
+  );
+
+  const tiers = {
+    primary: BRAIN_OBJECTS.filter((o) => o.tier === "primary"),
+    strategy: BRAIN_OBJECTS.filter((o) => o.tier === "strategy"),
+    operations: BRAIN_OBJECTS.filter((o) => o.tier === "operations"),
+    governance: BRAIN_OBJECTS.filter((o) => o.tier === "governance"),
+  };
 
   return (
     <div className="p-8">
-      <div className="mb-6">
-        <h2 className="text-lg font-semibold text-gray-900">Client Brain</h2>
-        <p className="text-sm text-gray-500 mt-1">
-          14 intelligence objects that power personalization
-        </p>
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h2 className="text-lg font-semibold text-gray-900">Client Brain</h2>
+          <p className="text-sm text-gray-500">
+            14 intelligence objects powering personalization
+          </p>
+        </div>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {BRAIN_OBJECTS.map((obj) => (
-          <Link
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        {tiers.primary.map((obj) => (
+          <BrainObjectCard
             key={obj.key}
-            href={`/clients/${id}/brain/${obj.key}`}
-            className="bg-white rounded-lg border p-4 hover:border-blue-300 hover:shadow-sm transition-all"
-          >
-            <h3 className="font-medium text-gray-900">{obj.label}</h3>
-            <p className="text-xs text-gray-500 mt-1">Click to view & edit</p>
-          </Link>
+            meta={obj}
+            clientId={id}
+            data={brainData[obj.key] as any}
+          />
         ))}
       </div>
+
+      <BrainTierSection title="Strategy" defaultOpen>
+        {tiers.strategy.map((obj) => (
+          <BrainObjectCard
+            key={obj.key}
+            meta={obj}
+            clientId={id}
+            data={brainData[obj.key] as any}
+          />
+        ))}
+      </BrainTierSection>
+
+      <BrainTierSection title="Operations">
+        {tiers.operations.map((obj) => (
+          <BrainObjectCard
+            key={obj.key}
+            meta={obj}
+            clientId={id}
+            data={brainData[obj.key] as any}
+          />
+        ))}
+      </BrainTierSection>
+
+      <BrainTierSection title="Governance">
+        {tiers.governance.map((obj) => (
+          <BrainObjectCard
+            key={obj.key}
+            meta={obj}
+            clientId={id}
+            data={brainData[obj.key] as any}
+          />
+        ))}
+      </BrainTierSection>
     </div>
   );
 }
