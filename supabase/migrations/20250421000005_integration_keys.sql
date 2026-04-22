@@ -18,10 +18,10 @@ alter table integration_keys enable row level security;
 -- Helper functions for encryption/decryption using pgcrypto
 create or replace function encrypt_api_key(plain_key text, passphrase text)
 returns text as $$
-  select encode(pgp_sym_encrypt(plain_key, passphrase), 'base64');
+  select encode(extensions.pgp_sym_encrypt(plain_key, passphrase), 'base64');
 $$ language sql security definer;
 
 create or replace function decrypt_api_key(encrypted_key text, passphrase text)
 returns text as $$
-  select pgp_sym_decrypt(decode(encrypted_key, 'base64'), passphrase);
+  select extensions.pgp_sym_decrypt(decode(encrypted_key, 'base64'), passphrase);
 $$ language sql security definer;
