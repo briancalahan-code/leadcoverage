@@ -48,6 +48,10 @@ export async function POST(request: NextRequest, { params }: Params) {
   const supabase = await createClient();
   const body = await request.json();
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   if (meta.singleton) {
     const { data, error } = await supabase
       .from(meta.table)
@@ -60,6 +64,23 @@ export async function POST(request: NextRequest, { params }: Params) {
       .single();
     if (error)
       return NextResponse.json({ error: error.message }, { status: 400 });
+
+    // Write change log
+    try {
+      await supabase.from("brain_change_log").insert({
+        client_id: id,
+        object_type: object,
+        object_id: id,
+        field_changed: "all",
+        old_value: null,
+        new_value: JSON.stringify(data),
+        changed_by: user?.id ?? null,
+        source: "ui",
+      });
+    } catch {
+      // Don't break main operation
+    }
+
     return NextResponse.json(data, { status: 201 });
   }
 
@@ -70,6 +91,23 @@ export async function POST(request: NextRequest, { params }: Params) {
     .single();
   if (error)
     return NextResponse.json({ error: error.message }, { status: 400 });
+
+  // Write change log
+  try {
+    await supabase.from("brain_change_log").insert({
+      client_id: id,
+      object_type: object,
+      object_id: data.id,
+      field_changed: "all",
+      old_value: null,
+      new_value: JSON.stringify(data),
+      changed_by: user?.id ?? null,
+      source: "ui",
+    });
+  } catch {
+    // Don't break main operation
+  }
+
   return NextResponse.json(data, { status: 201 });
 }
 
@@ -86,6 +124,14 @@ export async function PATCH(request: NextRequest, { params }: Params) {
   const body = await request.json();
   const { record_id, ...fields } = body;
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const changedFields = Object.keys(fields)
+    .filter((k) => k !== "last_updated")
+    .join(", ");
+
   if (meta.singleton) {
     const { data, error } = await supabase
       .from(meta.table)
@@ -95,6 +141,23 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       .single();
     if (error)
       return NextResponse.json({ error: error.message }, { status: 400 });
+
+    // Write change log
+    try {
+      await supabase.from("brain_change_log").insert({
+        client_id: id,
+        object_type: object,
+        object_id: id,
+        field_changed: changedFields || "unknown",
+        old_value: null,
+        new_value: JSON.stringify(fields),
+        changed_by: user?.id ?? null,
+        source: "ui",
+      });
+    } catch {
+      // Don't break main operation
+    }
+
     return NextResponse.json(data);
   }
 
@@ -112,6 +175,23 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     .single();
   if (error)
     return NextResponse.json({ error: error.message }, { status: 400 });
+
+  // Write change log
+  try {
+    await supabase.from("brain_change_log").insert({
+      client_id: id,
+      object_type: object,
+      object_id: record_id,
+      field_changed: changedFields || "unknown",
+      old_value: null,
+      new_value: JSON.stringify(fields),
+      changed_by: user?.id ?? null,
+      source: "ui",
+    });
+  } catch {
+    // Don't break main operation
+  }
+
   return NextResponse.json(data);
 }
 

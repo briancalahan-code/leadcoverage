@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { BRAIN_OBJECTS } from "@/lib/brain-objects";
 import { BrainObjectCard } from "@/components/brain/brain-object-card";
 import { BrainTierSection } from "@/components/brain/brain-tier-section";
+import { ChangeLog } from "@/components/brain/change-log";
 
 export default async function BrainPage({
   params,
@@ -101,6 +102,8 @@ export default async function BrainPage({
           />
         ))}
       </BrainTierSection>
+
+      <ChangeLog clientId={id} />
     </div>
   );
 }
